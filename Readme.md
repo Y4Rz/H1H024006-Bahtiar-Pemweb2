@@ -1,10 +1,8 @@
 # Laporan Praktikum Pemrograman Web II - Modul 1
 **Penyiapan Lingkungan Pengembangan Web Modern (Laravel 13 & Fiber v3)**
 
-- **Nama:** Bahtiar
+- **Nama:** Bahtiar Rizqi Efendy
 - **NIM:** H1H024006
-- **Program Studi:** Teknik Komputer
-- **Instansi:** Universitas Jenderal Soedirman
 
 ---
 
