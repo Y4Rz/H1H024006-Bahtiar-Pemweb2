@@ -1,5 +1,5 @@
 # Laporan Praktikum Pemrograman Web II - Modul 1
-**Penyiapan Lingkungan Pengembangan Web Modern (Laravel 13 & Fiber v3)**
+**Penyiapan Lingkungan Pengembangan Web 2 (Laravel 13 & Fiber v3)**
 
 - **Nama:** Bahtiar Rizqi Efendy
 - **NIM:** H1H024006
