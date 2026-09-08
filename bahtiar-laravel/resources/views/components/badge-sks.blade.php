@@ -1,3 +1,3 @@
-<div>
-    <!-- He who is contented is rich. - Laozi -->
-</div>
+<span class="badge bg-primary">
+    {{ $sks }} SKS
+</span>

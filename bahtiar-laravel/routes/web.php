@@ -19,13 +19,13 @@ Route::get('/mahasiswa/{nim}', function (string $nim) {
 return 'Data mahasiswa dengan NIM ' . $nim; 
 });
 
-Route::get('/matakuliah/{kode?}', function (?string $kode = null) { 
-    if ($kode === null) { 
-        return 'Menampilkan seluruh matakuliah'; 
-    } 
+//Route::get('/matakuliah/{kode?}', function (?string $kode = null) { 
+   // if ($kode === null) { 
+     //   return 'Menampilkan seluruh matakuliah'; 
+    //} 
  
-    return 'Menampilkan matakuliah kode ' . $kode; 
-});
+  //  return 'Menampilkan matakuliah kode ' . $kode; 
+//});
 
 Route::get('/semester/{angka}', function (int $angka) { 
     return 'Semester ke ' . $angka; 
@@ -40,3 +40,9 @@ Route::get('/data-mahasiswa/{nim}', [MahasiswaController::class,
 'show'])->name('mahasiswa.show');
 
 Route::get('/cari-mahasiswa', [MahasiswaController::class, 'cari']);
+
+use App\Http\Controllers\MatakuliahController;
+
+Route::get('/matakuliah', [MatakuliahController::class, 'index'])->name('matakuliah.index');
+Route::get('/matakuliah/{kode}', [MatakuliahController::class, 'show'])->name('matakuliah.show');
+
