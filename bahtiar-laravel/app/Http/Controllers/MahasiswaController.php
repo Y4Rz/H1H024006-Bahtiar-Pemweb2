@@ -2,24 +2,24 @@
  
 namespace App\Http\Controllers; 
  
-use Illuminate\Http\Request; 
+use App\Models\Mahasiswa;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; 
  
 class MahasiswaController extends Controller 
 { 
-    public function index() 
+   public function index() 
     { 
-        $daftarMahasiswa = [ 
-            ['nim' => 'H1A123001', 'nama' => 'Andi Prasetyo', 'angkatan' => 
-2023], 
-            ['nim' => 'H1A123002', 'nama' => 'Bunga Lestari', 'angkatan' => 
-2023], 
-            ['nim' => 'H1A123003', 'nama' => 'Citra Ramadhani', 'angkatan' => 
-2024], 
-        ]; 
- 
-        return view('mahasiswa.index', ['daftarMahasiswa' => 
-$daftarMahasiswa]); 
-    } 
+        DB::listen(function ($kueri) {
+            logger($kueri->sql);
+        });
+
+        $daftarMahasiswa = Mahasiswa::with('programStudi')
+            ->orderBy('nama')
+            ->paginate(10);
+
+        return view('mahasiswa.data', ['daftarMahasiswa' => $daftarMahasiswa]); 
+    }
  
     public function show(string $nim) 
     { 
