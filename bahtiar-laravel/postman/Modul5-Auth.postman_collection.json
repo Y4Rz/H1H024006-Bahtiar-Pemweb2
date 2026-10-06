@@ -1,0 +1,303 @@
+{
+	"info": {
+		"_postman_id": "pemweb2-modul5-sanctum",
+		"name": "Pemweb2 Modul 5 - Auth Sanctum",
+		"description": "Skenario pengujian Tugas 4 (jalankan berurutan):\n1. Login berhasil -> 200 + token tersimpan otomatis ke environment (tab Scripts).\n2. Login gagal (password salah) -> 401.\n3. Akses tanpa token (nonaktifkan auth pada request \"List mahasiswa TANPA token\") -> 401 \"Token tidak valid atau belum dikirim\".\n4. Akses dengan token kadaluwarsa: jalankan \"Logout\" lalu \"Profil setelah logout\" memakai token lama -> 401.\n5. Akses tanpa kemampuan cukup: login sebagai mahasiswa lalu \"Tambah mahasiswa (token mahasiswa)\" -> 403; \"Hapus mahasiswa (token mahasiswa)\" -> 403 (PeranAdmin).\n\nLangkah 12: koleksi memakai Bearer {{token}}; request Login menyimpan token via Scripts:\nconst data = pm.response.json(); pm.environment.set(\"token\", data.data.token);",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": { "type": "text/javascript", "exec": [""] }
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register mahasiswa",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/register",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mahasiswa Coba\",\n    \"email\": \"mhs.coba@unsoed.ac.id\",\n    \"password\": \"rahasia123\",\n    \"password_confirmation\": \"rahasia123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Register 201\", () => pm.response.to.have.status(201));",
+									"const data = pm.response.json();",
+									"pm.environment.set(\"token\", data.data.token);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login admin (simpan token)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/login",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@unsoed.ac.id\",\n    \"password\": \"rahasia123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Skenario 1: login berhasil 200\", () => pm.response.to.have.status(200));",
+									"const data = pm.response.json();",
+									"pm.test(\"Skenario 1: token diterbitkan\", () => pm.expect(data.data.token).to.be.a(\"string\"));",
+									"pm.environment.set(\"token\", data.data.token);",
+									"pm.environment.set(\"token_admin\", data.data.token);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login mahasiswa (simpan token)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/login",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mhs.coba@unsoed.ac.id\",\n    \"password\": \"rahasia123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Login mahasiswa 200\", () => pm.response.to.have.status(200));",
+									"const data = pm.response.json();",
+									"pm.environment.set(\"token_mhs\", data.data.token);",
+									"pm.environment.set(\"token\", data.data.token);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login gagal (password salah)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/login",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@unsoed.ac.id\",\n    \"password\": \"salah1234\"\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Skenario 2: login gagal 401\", () => pm.response.to.have.status(401));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Profil",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/profil"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Profil 200\", () => pm.response.to.have.status(200));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Ubah password (Tugas 1)",
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/password",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password_lama\": \"rahasia123\",\n    \"password\": \"baru1234\",\n    \"password_confirmation\": \"baru1234\"\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Ubah password 200\", () => pm.response.to.have.status(200));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/logout"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Logout 200\", () => pm.response.to.have.status(200));",
+									"pm.environment.set(\"token_kadaluarsa\", pm.environment.get(\"token\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Profil setelah logout (token kadaluwarsa)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{token_kadaluarsa}}", "type": "string" }]
+						},
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/auth/profil"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Skenario 4: token bekas logout ditolak 401\", () => pm.response.to.have.status(401));"]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Mahasiswa (otorisasi)",
+			"item": [
+				{
+					"name": "List mahasiswa TANPA token",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/mahasiswa"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Skenario 3: tanpa token 401\", () => pm.response.to.have.status(401));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Tambah mahasiswa (token mahasiswa)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{token_mhs}}", "type": "string" }]
+						},
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/mahasiswa",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": 1,\n    \"nim\": \"H1A125099\",\n    \"nama\": \"Uji Kemampuan\",\n    \"email\": \"uji.kemampuan@unsoed.ac.id\",\n    \"angkatan\": 2025,\n    \"ipk\": 3.0\n}",
+							"options": { "raw": { "language": "json" } }
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Skenario 5a: tanpa kemampuan tulis 403\", () => pm.response.to.have.status(403));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Hapus mahasiswa (token mahasiswa)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{token_mhs}}", "type": "string" }]
+						},
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/mahasiswa/1"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Skenario 5b: bukan admin 403 (PeranAdmin)\", () => pm.response.to.have.status(403));"]
+							}
+						}
+					]
+				},
+				{
+					"name": "Hapus mahasiswa (token admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{token_admin}}", "type": "string" }]
+						},
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": "{{baseUrl}}/api/mahasiswa/1"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": ["pm.test(\"Admin boleh hapus 200\", () => pm.response.to.have.status(200));"]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -5,7 +5,9 @@ namespace Tests\Feature\Api;
 use App\Models\Mahasiswa;
 use App\Models\Matakuliah;
 use App\Models\ProgramStudi;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class MatakuliahApiTest extends TestCase
@@ -15,6 +17,9 @@ class MatakuliahApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $admin = User::factory()->create(['peran' => 'admin']);
+        Sanctum::actingAs($admin, ['mahasiswa:baca', 'mahasiswa:tulis']);
 
         Matakuliah::create(['kode' => 'TKO101', 'nama' => 'Pemrograman Web II', 'sks' => 3, 'semester' => 4]);
         Matakuliah::create(['kode' => 'TKO102', 'nama' => 'Struktur Data', 'sks' => 3, 'semester' => 2]);

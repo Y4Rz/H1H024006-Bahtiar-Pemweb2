@@ -4,7 +4,9 @@ namespace Tests\Feature\Api;
 
 use App\Models\Mahasiswa;
 use App\Models\ProgramStudi;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class MahasiswaApiTest extends TestCase
@@ -16,6 +18,9 @@ class MahasiswaApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $admin = User::factory()->create(['peran' => 'admin']);
+        Sanctum::actingAs($admin, ['mahasiswa:baca', 'mahasiswa:tulis']);
 
         $this->prodi = ProgramStudi::create(['kode' => 'TK', 'nama' => 'Teknik Komputer', 'jenjang' => 'S1']);
 
