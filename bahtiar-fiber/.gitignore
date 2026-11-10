@@ -1,3 +1,4 @@
 bahtiar-fiber
 *.exe
 .env
+bin/
