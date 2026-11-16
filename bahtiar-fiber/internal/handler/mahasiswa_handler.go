@@ -9,6 +9,7 @@ import (
 
 	"bahtiar-fiber/internal/model"
 	"bahtiar-fiber/internal/repository"
+	"bahtiar-fiber/internal/validasi"
 )
 
 func DaftarMahasiswa(c fiber.Ctx) error {
@@ -109,12 +110,13 @@ func BuatMahasiswa(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Format body tidak valid")
 	}
 
-	if permintaan.ProgramStudiID == 0 || permintaan.Nim == "" || permintaan.Nama == "" || permintaan.Email == "" || permintaan.Angkatan == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "program_studi_id, nim, nama, email, dan angkatan wajib diisi")
-	}
-
-	if permintaan.Ipk < 0 || permintaan.Ipk > 4 {
-		return fiber.NewError(fiber.StatusBadRequest, "IPK harus berada pada rentang 0 sampai 4")
+	galat := validasi.Periksa(permintaan)
+	if galat != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"sukses": false,
+			"pesan":  "Data yang dikirim tidak valid",
+			"galat":  galat,
+		})
 	}
 
 	aktif := true

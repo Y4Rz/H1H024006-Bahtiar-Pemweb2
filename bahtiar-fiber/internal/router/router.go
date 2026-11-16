@@ -17,17 +17,27 @@ func Daftarkan(app *fiber.App) {
 		})
 	})
 
-	mahasiswa := api.Group("/mahasiswa", middleware.KunciApi())
+	api.Post("/auth/registrasi", handler.Registrasi)
+	api.Post("/auth/login", handler.Login)
+
+	terlindungi := api.Group("", middleware.Autentikasi())
+
+	terlindungi.Get("/auth/profil", handler.Profil)
+	terlindungi.Post("/auth/segarkan", handler.Segarkan)
+	terlindungi.Post("/auth/logout", handler.Logout)
+
+	mahasiswa := terlindungi.Group("/mahasiswa")
 
 	mahasiswa.Get("/", handler.DaftarMahasiswa)
-	mahasiswa.Post("/", handler.BuatMahasiswa)
 	mahasiswa.Get("/nim/:nim", handler.CariMahasiswaByNim)
 	mahasiswa.Get("/:id", handler.DetailMahasiswa)
-	mahasiswa.Put("/:id", handler.PerbaruiMahasiswa)
-	mahasiswa.Delete("/:id", handler.HapusMahasiswa)
-	mahasiswa.Post("/:id/pulihkan", handler.PulihkanMahasiswa)
 
-	matakuliah := api.Group("/matakuliah", middleware.KunciApi())
+	mahasiswa.Post("/", middleware.HanyaPeran("admin", "dosen"), handler.BuatMahasiswa)
+	mahasiswa.Put("/:id", middleware.HanyaPeran("admin", "dosen"), handler.PerbaruiMahasiswa)
+	mahasiswa.Delete("/:id", middleware.HanyaPeran("admin"), handler.HapusMahasiswa)
+	mahasiswa.Post("/:id/pulihkan", middleware.HanyaPeran("admin"), handler.PulihkanMahasiswa)
+
+	matakuliah := terlindungi.Group("/matakuliah")
 
 	matakuliah.Get("/", handler.DaftarMatakuliah)
 	matakuliah.Post("/", handler.BuatMatakuliah)
@@ -35,7 +45,7 @@ func Daftarkan(app *fiber.App) {
 	matakuliah.Put("/:id", handler.PerbaruiMatakuliah)
 	matakuliah.Delete("/:id", handler.HapusMatakuliah)
 
-	programStudi := api.Group("/program-studi", middleware.KunciApi())
+	programStudi := terlindungi.Group("/program-studi")
 
 	programStudi.Get("/", handler.DaftarProgramStudi)
 }
