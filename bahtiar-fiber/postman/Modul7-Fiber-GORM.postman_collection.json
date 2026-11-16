@@ -1,0 +1,702 @@
+{
+	"info": {
+		"_postman_id": "pemweb2-modul7-fiber-gorm",
+		"name": "Pemweb2 Modul 7 - Fiber + GORM",
+		"description": "Koleksi pengujian API Modul 7: Integrasi Fiber v3 dengan GORM dan MySQL.\n\nSemua endpoint membutuhkan header X-Api-Key.\n\nUrutan pengujian yang disarankan:\n1. Status API (tanpa API key)\n2. Program Studi - Daftar\n3. Mahasiswa - Buat\n4. Mahasiswa - Daftar (dengan pagination & filter)\n5. Mahasiswa - Detail by ID\n6. Mahasiswa - Cari by NIM\n7. Mahasiswa - Perbarui\n8. Mahasiswa - Hapus (soft delete)\n9. Mahasiswa - Pulihkan\n10. Matakuliah - Buat\n11. Matakuliah - Daftar\n12. Matakuliah - Detail\n13. Matakuliah - Perbarui\n14. Matakuliah - Hapus",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{ "key": "key", "value": "X-Api-Key", "type": "string" },
+			{ "key": "value", "value": "{{apiKey}}", "type": "string" },
+			{ "key": "in", "value": "header", "type": "string" }
+		]
+	},
+	"item": [
+		{
+			"name": "Status",
+			"item": [
+				{
+					"name": "GET Status API",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/status",
+						"description": "Memeriksa status API tanpa membutuhkan API key."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Status - Tanpa API Key (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa",
+						"description": "Akses endpoint terproteksi tanpa API key harus mengembalikan 401."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401 Unauthorized\", () => pm.response.to.have.status(401));",
+									"pm.test(\"Sukses false\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.false;",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Program Studi",
+			"item": [
+				{
+					"name": "GET Daftar Program Studi",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/program-studi",
+						"description": "Mengambil daftar program studi beserta jumlah mahasiswa aktif."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true dan data array\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"    pm.expect(data.data).to.be.an('array');",
+									"});",
+									"pm.test(\"Field jumlah_mahasiswa ada\", () => {",
+									"    const data = pm.response.json();",
+									"    if (data.data.length > 0) {",
+									"        pm.expect(data.data[0]).to.have.property('jumlah_mahasiswa');",
+									"        pm.environment.set('programStudiId', data.data[0].id);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Mahasiswa",
+			"item": [
+				{
+					"name": "POST Buat Mahasiswa (berhasil)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/mahasiswa",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": {{programStudiId}},\n    \"nim\": \"H1H024006\",\n    \"nama\": \"Bahtiar Rizqi Efendy\",\n    \"email\": \"bahtiar@example.com\",\n    \"angkatan\": 2024,\n    \"ipk\": 3.75,\n    \"aktif\": true\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Membuat data mahasiswa baru. Menyimpan ID mahasiswa ke environment."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+									"pm.test(\"Sukses true dan data mahasiswa ada\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"    pm.expect(data.data).to.have.property('id');",
+									"    pm.environment.set('mahasiswaId', data.data.id);",
+									"    pm.environment.set('mahasiswaNim', data.data.nim);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST Buat Mahasiswa - Validasi Gagal (NIM kosong)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/mahasiswa",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": 1,\n    \"nim\": \"\",\n    \"nama\": \"Mahasiswa Test\",\n    \"email\": \"test@example.com\",\n    \"angkatan\": 2024\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Harus mengembalikan 400 Bad Request jika NIM kosong."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));",
+									"pm.test(\"Sukses false\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.false;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST Buat Mahasiswa - IPK tidak valid (> 4.0)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/mahasiswa",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": 1,\n    \"nim\": \"H1H099999\",\n    \"nama\": \"Mahasiswa IPK Salah\",\n    \"email\": \"ipksalah@example.com\",\n    \"angkatan\": 2024,\n    \"ipk\": 5.0\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Harus mengembalikan 400 jika IPK lebih dari 4.0."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Mahasiswa",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mahasiswa?halaman=1&per_halaman=10&urut=nama",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mahasiswa"],
+							"query": [
+								{ "key": "halaman", "value": "1" },
+								{ "key": "per_halaman", "value": "10" },
+								{ "key": "urut", "value": "nama" }
+							]
+						},
+						"description": "Mengambil daftar mahasiswa dengan pagination. Urutan: nama atau ipk."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Ada field meta dengan pagination\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data).to.have.property('meta');",
+									"    pm.expect(data.meta).to.have.property('total');",
+									"    pm.expect(data.meta).to.have.property('halaman');",
+									"    pm.expect(data.meta).to.have.property('per_halaman');",
+									"    pm.expect(data.meta).to.have.property('total_halaman');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Mahasiswa - Filter Angkatan",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mahasiswa?angkatan=2024&urut=ipk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mahasiswa"],
+							"query": [
+								{ "key": "angkatan", "value": "2024" },
+								{ "key": "urut", "value": "ipk" }
+							]
+						},
+						"description": "Filter mahasiswa berdasarkan angkatan, diurutkan berdasarkan IPK."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Mahasiswa - Pencarian",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mahasiswa?cari=Bahtiar",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mahasiswa"],
+							"query": [
+								{ "key": "cari", "value": "Bahtiar" }
+							]
+						},
+						"description": "Mencari mahasiswa berdasarkan nama atau NIM (LIKE query)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Hasil pencarian tidak kosong\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.data.length).to.be.greaterThan(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Mahasiswa - Urut tidak valid (400)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mahasiswa?urut=invalid",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mahasiswa"],
+							"query": [
+								{ "key": "urut", "value": "invalid" }
+							]
+						},
+						"description": "Harus mengembalikan 400 jika parameter urut tidak valid."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Detail Mahasiswa by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/{{mahasiswaId}}",
+						"description": "Mengambil detail mahasiswa berdasarkan ID. Menyertakan data program studi (preload)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Field program_studi ada (preload)\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.data).to.have.property('program_studi');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Detail Mahasiswa - Tidak Ditemukan (404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/99999",
+						"description": "Harus mengembalikan 404 jika mahasiswa tidak ditemukan."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404 Not Found\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Cari Mahasiswa by NIM",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/nim/{{mahasiswaNim}}",
+						"description": "Mencari mahasiswa berdasarkan NIM (exact match)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"NIM cocok\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.data.nim).to.eql(pm.environment.get('mahasiswaNim'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "PUT Perbarui Mahasiswa",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/mahasiswa/{{mahasiswaId}}",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nama\": \"Bahtiar Rizqi Efendy (Updated)\",\n    \"ipk\": 3.90,\n    \"aktif\": true\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Memperbarui data mahasiswa. Hanya field yang dikirim yang akan diubah (partial update)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Nama berhasil diperbarui\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"    pm.expect(data.data.nama).to.include('Updated');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "DELETE Hapus Mahasiswa (Soft Delete)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/{{mahasiswaId}}",
+						"description": "Soft delete mahasiswa. Data tidak benar-benar dihapus, hanya ditandai deleted_at."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Detail - Mahasiswa sudah dihapus (404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/{{mahasiswaId}}",
+						"description": "Setelah soft delete, mahasiswa tidak lagi ditemukan (404)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404 Not Found setelah soft delete\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST Pulihkan Mahasiswa",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/api/mahasiswa/{{mahasiswaId}}/pulihkan",
+						"description": "Memulihkan mahasiswa yang sudah di-soft delete dengan menghapus nilai deleted_at."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true dan data ada\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"    pm.expect(data.data).to.have.property('id');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Matakuliah",
+			"item": [
+				{
+					"name": "POST Buat Matakuliah (berhasil)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/matakuliah",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": {{programStudiId}},\n    \"kode\": \"TK301\",\n    \"nama\": \"Pemrograman Web 2\",\n    \"sks\": 3,\n    \"semester\": 5\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Membuat data matakuliah baru. Menyimpan ID matakuliah ke environment."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+									"pm.test(\"Data matakuliah ada\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"    pm.expect(data.data).to.have.property('id');",
+									"    pm.environment.set('matakuliahId', data.data.id);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST Buat Matakuliah - Validasi Gagal (SKS 0)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/matakuliah",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"program_studi_id\": 1,\n    \"kode\": \"TK999\",\n    \"nama\": \"Matakuliah Test\",\n    \"sks\": 0,\n    \"semester\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Harus mengembalikan 400 jika SKS bernilai 0 atau kurang."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Matakuliah",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/matakuliah?halaman=1&per_halaman=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matakuliah"],
+							"query": [
+								{ "key": "halaman", "value": "1" },
+								{ "key": "per_halaman", "value": "10" }
+							]
+						},
+						"description": "Mengambil daftar matakuliah dengan pagination."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Ada field meta\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data).to.have.property('meta');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Daftar Matakuliah - Filter Semester",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/matakuliah?semester=5",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matakuliah"],
+							"query": [
+								{ "key": "semester", "value": "5" }
+							]
+						},
+						"description": "Filter matakuliah berdasarkan semester."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET Detail Matakuliah by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/matakuliah/{{matakuliahId}}",
+						"description": "Mengambil detail matakuliah berdasarkan ID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Field program_studi ada\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.data).to.have.property('program_studi');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "PUT Perbarui Matakuliah",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": "{{baseUrl}}/api/matakuliah/{{matakuliahId}}",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nama\": \"Pemrograman Web 2 (Lanjut)\",\n    \"sks\": 4\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"description": "Memperbarui data matakuliah. Hanya field yang dikirim yang akan diubah."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "DELETE Hapus Matakuliah",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseUrl}}/api/matakuliah/{{matakuliahId}}",
+						"description": "Menghapus matakuliah secara permanen (hard delete, tidak ada soft delete)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Sukses true\", () => {",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.sukses).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
